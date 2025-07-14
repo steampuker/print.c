@@ -37,7 +37,7 @@ For MSVC, enable /Zc:preprocessor and /std:c11
 
 This project is experimental, most of the features (positional arguments, additional formatting, float-to-string conversion, etc.) are missing.
 
-The performance is also not great, about 10 times slower than a regular printf.
+It is also not optimized for performance (uses standard print functions instead of OS syscalls).
 
 Still, I'd appreciate if you [open an issue](https://github.com/steampuker/print.c/issues).
 
