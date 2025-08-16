@@ -8,8 +8,8 @@ Automatically infers argument types (for now, only `int`, `_Bool`/`bool`, `char`
 The API consists of 4 macros:
  - print(format_string, args...) - formats `format_string` replacing `"{}"` with `args` and prints it to the standard output.
  - println(format_string, args...) - same as print but appends a newline.
- - print_to(out, args...) - same as `print` but instead outputs it to the `out` file stream.
- - println(format_string, args...) - same as `println` but instead outputs it to the `out` file stream.
+ - print_to(out, format_string, args...) - same as `print` but instead outputs it to the `out` file stream.
+ - println_to(out, format_string, args...) - same as `println` but instead outputs it to the `out` file stream.
 
 ## Example
 
