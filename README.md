@@ -1,45 +1,42 @@
 # print.c
-A proof-of-concept print macro that supports Python-style formatting. 
+A proof-of-concept set of print macros that support Python-style formatting. 
 
 Automatically infers argument types (for now, only `int`, `_Bool`/`bool`, `char` and `char*` are supported).
 
 ## Usage
 
-print.c adds a macro with two overloads:
- - print(string, args...) - formats `string` replacing `"{}"` with `args` and prints it to the standard output (with a newline).
- - print(print_ctx_t*, args...) - uses a pointer to a `print_ctx_t` structure.
-
-`print_ctx_t` is a struct with the following members:
- - `format` - a character pointer with the format string.
- - `length` - the length of the format string.
- - `stream` - a `FILE*` the output is sent to (stdout, stderr or open files).
- - `newline` - if `true`, prints a newline after the format string 
+The API consists of 4 macros:
+ - print(format_string, args...) - formats `format_string` replacing `"{}"` with `args` and prints it to the standard output.
+ - println(format_string, args...) - same as print but appends a newline.
+ - print_to(out, args...) - same as `print` but instead outputs it to the `out` file stream.
+ - println(format_string, args...) - same as `println` but instead outputs it to the `out` file stream.
 
 ## Example
 
 ``` c
 #include "print.h"
 
+#define bool(x) (_Bool)x
+#define char(x) (char)x
+
 int main(void) {
-    print("Here are a few examples:");
+    /* Printing without a newline */
+    print("Here are a few examples: ");
+    
+    /* Appending to the previous one and printing with a newline */
     /* bool and char need a cast, since C uses int by default */
-    print("int: {}, bool: {}, char: {}, string: {}", 21, (_Bool)0, (char)'a', "bazinga");
+    println("int: {}, bool: {}, char: {}, string: {}", 21, bool(0), char('a'), "bazinga");
     
-    /* More expressive logging with print_ctx_t */
-    print_ctx_t err_ctx = {.stream = stderr, .newline = 0, 
-                           .format = "ERROR: Awful code involved - {}", .length = 31};
-    print(&err_ctx, (_Bool)1);
-    
-    /* Newline! */
-    print("");
+    /* Printing an error with println_to */
+    println_to(stderr, "Error: Bad coding style - {}", bool(1));
 }
 ```
 
 Output:
 
-    Here are a few examples:
-    int: 21, bool: false, char: true, string: bazinga
-    ERROR: Awful code involved - true
+    Here are a few examples: int: 21, bool: false, char: a, string: bazinga
+    Error: Bad coding style - true
+
 
 ## Compiling
 
@@ -52,7 +49,7 @@ For MSVC, enable /Zc:preprocessor and /std:c11
 
 ## Feedback
 
-This project is experimental, most of the features (positional arguments, additional formatting, float-to-string conversion, etc.) are missing.
+This is experimental, most of the features (positional arguments, additional formatting, float-to-string conversion, etc.) are missing.
 
 It is also not optimized for performance (uses standard print functions instead of OS syscalls).
 
@@ -60,5 +57,10 @@ Still, I'd appreciate if you [open an issue](https://github.com/steampuker/print
 
 ## Related
 
-This project is based on [fmt](https://github.com/fmtlib/fmt) library.
+This project is largely based on [fmt](https://github.com/fmtlib/fmt) library.
+
+## License
+
+print.c is [Public Domain](https://unlicense.org/)
+
 

@@ -33,7 +33,7 @@ struct PrintableType {
 #define TYPE_TO_ARG(x)  _Generic(x, \
                         int: (struct PrintableType) {PRINTABLE_INT, .as_int = (long long)x}, \
                         _Bool: (struct PrintableType) {PRINTABLE_BOOL, .as_bool = !!x}, \
-                        char: (struct PrintableType) {PRINTABLE_BOOL, .as_bool = (char)(long)x}, \
+                        char: (struct PrintableType) {PRINTABLE_CHAR, .as_char = (char)(long)x}, \
                         char*: (struct PrintableType) {PRINTABLE_STRING, .as_str = (char*)x})
 
 #define VA_GET_1ST(_1, ...) _1
@@ -41,54 +41,28 @@ struct PrintableType {
 
 #define TYPE_ARR(...) (struct PrintableType[]) {FOR_EACH(TYPE_TO_ARG, __VA_ARGS__) __VA_OPT__(,) {0} }
 
-// #define INDIRECT(call, ...) call(__VA_ARGS__)
-// #define DEPAREN(prefix, x) INDIRECT(PARENS_PROCESS, prefix, PARENS_CAPTURED x)
-// #define PARENS_CAPTURED(...) NOTHING __VA_ARGS__
-// #define PARENS_PROCESS(prefix, ...) prefix ## __VA_ARGS__
-// #define PROCESS_PARENS_CAPTURED .newline = 1, .stream = stdout, .format = 
-// #define PROCESS_NOTHING .format = 
-
-#define OVERLOAD_PARAM1(x) _Generic(x, \
-                           char*: &(struct print_ctx_t){.newline = 1, .stream = stdout, .format = (const char*)x, .length = sizeof _Generic(x, char*: x, default: (char[2]){}) - 1}, \
-                           const char*: &(struct print_ctx_t){.newline = 1, .stream = stdout, .format = (const char*)x, .length = sizeof _Generic(x, char*: x, default: (char[2]){}) - 1}, \
-                           struct print_ctx_t*: x)
-
-
-#define print(x, ...) fmt_print_impl(OVERLOAD_PARAM1(x), \
-                      TYPE_ARR(__VA_ARGS__), \
-                      VA_COUNT(__VA_ARGS__ __VA_OPT__(,) 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0))
-
-typedef struct print_ctx_t {
+struct print_ctx_t {
     const char* format; 
     FILE* stream;
     size_t length;
-    _Bool newline;
-} print_ctx_t;
+};
 
 void fmt_print_impl(const struct print_ctx_t* format, struct PrintableType args[], size_t arg_count);
 
 #endif
 
-/*
-MIT License
+#define print(format_string, ...) fmt_print_impl(&(struct print_ctx_t){.stream = stdout, .format = format_string, .length = sizeof format_string - 1}, \
+                      TYPE_ARR(__VA_ARGS__), \
+                      VA_COUNT(__VA_ARGS__ __VA_OPT__(,) 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0))
 
-Copyright (c) 2025 steampuker
+#define println(format_string, ...) fmt_print_impl(&(struct print_ctx_t){.stream = stdout, .format = format_string "\n", .length = sizeof format_string}, \
+                      TYPE_ARR(__VA_ARGS__), \
+                      VA_COUNT(__VA_ARGS__ __VA_OPT__(,) 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0))
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+#define print_to(out, format_string, ...) fmt_print_impl(&(struct print_ctx_t){.stream = out, .format = format_string, .length = sizeof format_string - 1}, \
+                      TYPE_ARR(__VA_ARGS__), \
+                      VA_COUNT(__VA_ARGS__ __VA_OPT__(,) 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0))
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+#define println_to(out, format_string, ...) fmt_print_impl(&(struct print_ctx_t){.stream = out, .format = format_string "\n", .length = sizeof format_string}, \
+                      TYPE_ARR(__VA_ARGS__), \
+                      VA_COUNT(__VA_ARGS__ __VA_OPT__(,) 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0))

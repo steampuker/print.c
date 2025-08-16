@@ -53,11 +53,10 @@ static struct {
 
 void print_flush(const struct print_ctx_t* fstr) {
     fprintf(fstr->stream, "%.*s", print_buffer.cursor, print_buffer.buffer);
-    if(fstr->newline) puts("");
     print_buffer.cursor = 0;
 }
 
-unsigned interpret_format(const struct print_ctx_t* fstring, unsigned current_arg, struct PrintableType args[], size_t arg_count) {
+unsigned interpret_format(const struct print_ctx_t* fstring, unsigned current_arg, struct PrintableType args[]) {    
     char arg_buf[64] = {0};
     const char* print_ptr = arg_buf;
     size_t length;
@@ -80,18 +79,22 @@ unsigned interpret_format(const struct print_ctx_t* fstring, unsigned current_ar
 void fmt_print_impl(const struct print_ctx_t* fstring, struct PrintableType args[], size_t arg_count) {
     unsigned current_arg = 0;
     size_t length = fstring->length;
-    for(int cursor = 0; cursor < length; ++cursor) {
+    _Bool should_flush = 0;
+    
+    for(size_t cursor = 0; cursor < length; ++cursor) {
         switch(fstring->format[cursor]) {
         case '{':
             switch(fstring->format[++cursor]) {
             case '{': break;  
             case '}': 
-                if(arg_count <= current_arg) continue;
-                current_arg = interpret_format(fstring, current_arg, args, arg_count);
+                if(current_arg >= arg_count) continue;
+                current_arg = interpret_format(fstring, current_arg, args);
                 continue;
             }
+            break;
+        
+        case '\n': should_flush = 1;
         default:
-                if(fstring->format[cursor] == '{') cursor++;
                 print_buffer.buffer[print_buffer.cursor] = fstring->format[cursor];
                 print_buffer.cursor++;
                 
@@ -99,6 +102,7 @@ void fmt_print_impl(const struct print_ctx_t* fstring, struct PrintableType args
                     print_flush(fstring);
         }
     }
-    if(fstring->newline || fstring->stream != stdout || fstring->stream != stderr)
+    
+    if(should_flush || fstring->stream != stdout || fstring->stream != stderr)
         print_flush(fstring);
 }
