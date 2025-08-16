@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+
 #include "print.h"
 
 #define BUFFER_SIZE 1024
@@ -49,49 +50,55 @@ static struct {
     char buffer[BUFFER_SIZE];
 } print_buffer;
 
-void print_flush(void) {
-    printf("%.*s", print_buffer.cursor, print_buffer.buffer);
+
+void print_flush(const struct print_ctx_t* fstr) {
+    fprintf(fstr->stream, "%.*s", print_buffer.cursor, print_buffer.buffer);
+    if(fstr->newline) puts("");
     print_buffer.cursor = 0;
 }
 
-unsigned interpret_format(unsigned current_arg, struct PrintableType args[], size_t arg_count) {
-    char arg_buf[20] = {0};
+unsigned interpret_format(const struct print_ctx_t* fstring, unsigned current_arg, struct PrintableType args[], size_t arg_count) {
+    char arg_buf[64] = {0};
     const char* print_ptr = arg_buf;
     size_t length;
     
     switch(args[current_arg].type) {
         case PRINTABLE_INT: length = intToStr(args[current_arg].as_int, arg_buf); break;
         case PRINTABLE_BOOL: length = boolToStr(args[current_arg].as_bool, &print_ptr); break;
-        case PRINTABLE_CHAR: arg_buf[0] = args[current_arg].as_char; length = 1; break; 
+        case PRINTABLE_CHAR: length = 1; arg_buf[0] = args[current_arg].as_char; break; 
+        case PRINTABLE_STRING: length = strlen(args[current_arg].as_str); memcpy(arg_buf, args[current_arg].as_str, length); break;
     }
     
     if(print_buffer.cursor + length > (BUFFER_SIZE - 1))
-        print_flush();
+        print_flush(fstring);
     
     memcpy(print_buffer.buffer + print_buffer.cursor, print_ptr, length);
     print_buffer.cursor += length;
     return current_arg + 1;
 }
 
-void fmt_print_impl(const char* fstring, size_t length, struct PrintableType args[], size_t arg_count) {
+void fmt_print_impl(const struct print_ctx_t* fstring, struct PrintableType args[], size_t arg_count) {
     unsigned current_arg = 0;
+    size_t length = fstring->length;
     for(int cursor = 0; cursor < length; ++cursor) {
-        switch(fstring[cursor]) {
+        switch(fstring->format[cursor]) {
         case '{':
-            switch(fstring[++cursor]) {
+            switch(fstring->format[++cursor]) {
             case '{': break;  
             case '}': 
                 if(arg_count <= current_arg) continue;
-                current_arg = interpret_format(current_arg, args, arg_count);
+                current_arg = interpret_format(fstring, current_arg, args, arg_count);
                 continue;
             }
         default:
-                if(fstring[cursor] == '{') cursor++;
-                print_buffer.buffer[print_buffer.cursor] = fstring[cursor];
+                if(fstring->format[cursor] == '{') cursor++;
+                print_buffer.buffer[print_buffer.cursor] = fstring->format[cursor];
                 print_buffer.cursor++;
                 
-                if(fstring[cursor] == '\n' || print_buffer.cursor > (BUFFER_SIZE - 1))
-                    print_flush();
+                if(print_buffer.cursor > (BUFFER_SIZE - 1))
+                    print_flush(fstring);
         }
     }
+    if(fstring->newline || fstring->stream != stdout || fstring->stream != stderr)
+        print_flush(fstring);
 }
