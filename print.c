@@ -92,15 +92,15 @@ void fmt_print_impl(const struct print_ctx_t* fstring, struct PrintableType args
                 continue;
             }
             break;
-        
-        case '\n': should_flush = 1;
-        default:
-                print_buffer.buffer[print_buffer.cursor] = fstring->format[cursor];
-                print_buffer.cursor++;
-                
-                if(print_buffer.cursor > (BUFFER_SIZE - 1))
-                    print_flush(fstring);
+        case '}': cursor++; break;
+        case '\n': should_flush = 1; break;
         }
+        
+        print_buffer.buffer[print_buffer.cursor] = fstring->format[cursor];
+        print_buffer.cursor++;
+        
+        if(print_buffer.cursor > (BUFFER_SIZE - 1))
+            print_flush(fstring);
     }
     
     if(should_flush || fstring->stream != stdout || fstring->stream != stderr)
